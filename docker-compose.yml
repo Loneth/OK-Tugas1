@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   nginx:
     image: nginx:alpine
@@ -14,7 +12,12 @@ services:
       - wp-network
 
   wp:
+    container_name: ini_wordpress
     image: wordpress:php8.2-apache
+    build:
+      context: .
+    ports:
+      - "80:80"
     environment:
       WORDPRESS_DB_HOST: db
       WORDPRESS_DB_USER: ${DB_USER}
@@ -42,7 +45,10 @@ services:
     restart: unless-stopped
 
   pma:
+    container_name: ini_pma
     image: phpmyadmin:5-apache
+    build:
+      context: .
     ports:
       - "8080:8080"
     environment:
