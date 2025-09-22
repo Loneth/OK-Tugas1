@@ -1,43 +1,61 @@
-version: "3.9"
+version: '3.8'
 
 services:
-  db:
-    image: mariadb:latest
-    container_name: ${NAME}-mariadb
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-    volumes:
-      - db_data:/var/lib/mysql
-  
-  wordpress:
-    image: wordpress:latest
-    container_name: ${NAME}-wordpress
-    restart: always
+  nginx:
+    image: nginx:alpine
     ports:
       - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - wp
+      - pma
+    networks:
+      - wp-network
+
+  wp:
+    image: wordpress:php8.2-apache
     environment:
-      WORDPRESS_DB_HOST: db:3306
-      WORDPRESS_DB_USER: ${MYSQL_USER}
-      WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD}
-      WORDPRESS_DB_NAME: ${MYSQL_DATABASE}
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: ${DB_USER}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+      WORDPRESS_DB_NAME: ${DB_NAME}
+    volumes:
+      - wp_data:/var/www/html
     depends_on:
       - db
+    networks:
+      - wp-network
+    restart: unless-stopped
 
-  phpmyadmin:
-    image: phpmyadmin:latest
-    container_name: ${NAME}-phpmyadmin
-    restart: always
-    ports:
-      - "8080:80"
+  db:
+    image: mariadb:10.11
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - wp-network
+    restart: unless-stopped
+
+  pma:
+    image: phpmyadmin:5-apache
     environment:
       PMA_HOST: db
-      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
-    depends_on:
-      - db
+      PMA_PORT: 3306
+      PMA_USER: ${DB_USER}
+      PMA_PASSWORD: ${DB_PASSWORD}
+    networks:
+      - wp-network
+    restart: unless-stopped
 
 volumes:
+  wp_data:
   db_data:
+
+networks:
+  wp-network:
+    driver: bridge
