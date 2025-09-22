@@ -3,6 +3,7 @@ services:
     image: nginx:alpine
     ports:
       - "80:80"
+      - "8080:8080"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
@@ -16,8 +17,8 @@ services:
     image: wordpress:php8.2-apache
     build:
       context: .
-    ports:
-      - "80:80"
+    expose:
+      - "80"
     environment:
       WORDPRESS_DB_HOST: db
       WORDPRESS_DB_USER: ${DB_USER}
@@ -47,10 +48,8 @@ services:
   pma:
     container_name: ini_pma
     image: phpmyadmin:5-apache
-    build:
-      context: .
-    ports:
-      - "8080:8080"
+    expose:
+      - "80"
     environment:
       PMA_HOST: db
       PMA_PORT: 3306
